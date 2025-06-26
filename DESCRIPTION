@@ -13,7 +13,9 @@ RoxygenNote: 7.3.2
 Imports: 
     cli,
     clipr,
-    gert
+    gert,
+    rappdirs,
+    withr
 Suggests:
     mockery,
     testthat (>= 3.0.0)

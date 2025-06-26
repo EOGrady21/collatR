@@ -62,20 +62,16 @@ collate_from_path <- function(path = ".",
   all_files <- gert::git_ls(repo = path)$path
 
   # --- ADDING THIS DEBUGGING BLOCK ---
-  message("--- Debug: Files found by gert::git_ls ---")
-  if(length(all_files) > 0) {
-    print(head(all_files))
-  } else {
-    print("gert::git_ls returned character(0)")
-    message("Does the directory '", path, "' exist and contain files?")
-    print(list.files(path, recursive = TRUE, all.files = TRUE))
-  }
-  message("--------------------------------------")
-  # ------------------------------------
-
-  # --- The rest of the function is identical ---
-  # ... (pasting the rest for completeness)
-
+  # message("--- Debug: Files found by gert::git_ls ---")
+  # if(length(all_files) > 0) {
+  #   print(head(all_files))
+  # } else {
+  #   print("gert::git_ls returned character(0)")
+  #   message("Does the directory '", path, "' exist and contain files?")
+  #   print(list.files(path, recursive = TRUE, all.files = TRUE))
+  # }
+  # message("--------------------------------------")
+  #
   included_files <- unique(unlist(sapply(include_patterns, function(pattern) {
     grep(pattern, all_files, value = TRUE, ignore.case = TRUE)
   })))

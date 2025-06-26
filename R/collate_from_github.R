@@ -15,6 +15,7 @@
 #' @export
 #' @importFrom cli cli_alert_info cli_alert_success cli_abort
 #' @importFrom gert git_clone
+#' @importFrom rappdirs user_cache_dir
 #' @seealso \code{\link{collate_from_path}} for collating from a local directory.
 #' @examples
 #' \dontrun{
@@ -33,58 +34,71 @@
 #' )
 #' }
 collate_from_github <- function(repo, branch = NULL, ...) {
-  # --- NEW: Check for command-line git ---
   git_path <- Sys.which("git")
   if (git_path == "") {
-    cli_abort(c(
-      "x" = "Command-line 'git' not found.",
-      "!" = "This function requires 'git' to be installed and on the system's PATH.",
-      "i" = "Please install git from https://git-scm.com/downloads"
-    ))
+    cli_abort("Command-line 'git' not found...")
   }
-
   if (!grepl("/", repo, fixed = TRUE)) {
     cli_abort("The `repo` format must be 'user/repo'...")
   }
 
-  repo_path <- file.path(tempdir(), basename(repo))
-  # Clean up directory on exit
-  on.exit(unlink(repo_path, recursive = TRUE, force = TRUE), add = TRUE)
+  # --- CACHING LOGIC ---
+  # Define a persistent cache directory for the package
+  cache_root <- rappdirs::user_cache_dir(appname = "collator")
+  dir.create(cache_root, showWarnings = FALSE, recursive = TRUE)
 
+  # Path for the specific repo in our cache
+  repo_path <- file.path(cache_root, repo)
   repo_url <- paste0("https://github.com/", repo)
 
-  # --- Build the git command arguments ---
-  args <- c("clone", "--depth", "1") # --depth 1 for a faster shallow clone
-  if (!is.null(branch)) {
-    args <- c(args, "--branch", branch)
-  }
-  args <- c(args, repo_url, repo_path)
+  if (dir.exists(repo_path)) {
+    # --- REPO EXISTS: PULL LATEST CHANGES ---
+    cli_alert_info("Cached repo found. Pulling latest changes for '{repo}'...")
 
-  cli_alert_info("Running git clone...")
+    # Construct pull command. We must set the working directory.
+    # We use withr::with_dir to safely change directory only for this command.
+    pull_args <- c("pull", "origin", branch %||% "HEAD")
 
-  # --- Execute the system command ---
-  result <- tryCatch({
-    system2(git_path, args = args, stdout = TRUE, stderr = TRUE)
-  }, warning = function(w) {
-    # system2 can throw warnings on non-zero exit, which we treat as errors
-    w
-  })
+    result <- tryCatch(
+      withr::with_dir(repo_path, system2(git_path, pull_args, stdout = TRUE, stderr = TRUE)),
+      warning = function(w) w
+    )
 
-  # --- Check for cloning errors ---
-  if (inherits(result, "warning") || any(grepl("fatal:", result, ignore.case = TRUE))) {
-    output_text <- paste(result, collapse = "\n")
-    if (grepl("repository not found", output_text, ignore.case = TRUE)) {
-      cli_abort("Failed to clone: Repository not found (it may be private or misspelled).")
-    } else if (grepl("could not find remote branch", output_text, ignore.case = TRUE)) {
-      cli_abort("Failed to clone: The branch '{branch}' does not exist.")
+    if (inherits(result, "warning") || any(grepl("fatal:|error:", result, ignore.case = TRUE))) {
+      cli_warn("Could not pull updates for cached repo. Using existing version. Error: {paste(result, collapse = '\\n')}")
     } else {
-      cli_abort(c("Git clone failed. Raw output:", paste(" ", result)))
+      cli_alert_success("Successfully pulled updates.")
     }
+
+  } else {
+    # --- REPO DOES NOT EXIST: CLONE IT ---
+    cli_alert_info("Cloning '{repo}' into cache...")
+
+    clone_args <- c("clone", "--depth", "1")
+    if (!is.null(branch)) {
+      clone_args <- c(clone_args, "--branch", branch)
+    }
+    clone_args <- c(clone_args, repo_url, repo_path)
+
+    result <- tryCatch(
+      system2(git_path, clone_args, stdout = TRUE, stderr = TRUE),
+      warning = function(w) w
+    )
+
+    if (inherits(result, "warning") || any(grepl("fatal:", result, ignore.case = TRUE))) {
+      output_text <- paste(result, collapse = "\n")
+      if (grepl("repository not found", output_text, ignore.case = TRUE)) {
+        cli_abort("Failed to clone: Repository not found (it may be private or misspelled).")
+      } else if (grepl("could not find remote branch", output_text, ignore.case = TRUE)) {
+        cli_abort("Failed to clone: The branch '{branch}' does not exist.")
+      } else {
+        cli_abort(c("Git clone failed. Raw output:", paste(" ", result)))
+      }
+    }
+    cli_alert_success("Successfully cloned and cached repository.")
   }
 
-  cli_alert_success("Successfully cloned repository.")
-
-  # Now, call the function that uses gert::git_ls, which will work correctly.
+  # The rest of the function proceeds, using the (now guaranteed to exist) repo_path
   collate_from_path(path = repo_path, ...)
 }
 
