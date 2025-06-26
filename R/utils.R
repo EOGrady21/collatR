@@ -31,3 +31,7 @@ is_binary_file <- function(file_path, n_bytes = 1024L) {
     TRUE
   })
 }
+
+generate_cache_key <- function(repo, branch) {
+  paste0(gsub("/", "_", repo), if (!is.null(branch)) paste0("_", branch) else "")
+}
