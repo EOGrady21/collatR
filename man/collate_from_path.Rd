@@ -2,7 +2,9 @@
 % Please edit documentation in R/collate_from_path.R
 \name{collate_from_path}
 \alias{collate_from_path}
-\title{Collate Source Code from a Local Path}
+\title{Scans a local directory, finds relevant source files based on include/exclude
+patterns, and combines them into a single text file. The output is
+automatically copied to the clipboard for convenience.}
 \usage{
 collate_from_path(
   path = ".",
@@ -10,9 +12,9 @@ collate_from_path(
   copy_to_clipboard = TRUE,
   preamble = NULL,
   include_patterns = c("^DESCRIPTION$", "^NAMESPACE$", "^NEWS\\\\.md$",
-    "^README\\\\.md$", "\\\\.R$", "\\\\.Rmd$", "\\\\.Rprofile$", "\\\\.yml$",
-    "\\\\.yaml$", "\\\\.sh$", "\\\\.gitignore$", "\\\\.Rbuildignore$", "/vignettes/",
-    "/tests/", "/inst/", "/data/", "/.github/"),
+    "^README\\\\.md$", "^\\\\.Rprofile$", "^\\\\.gitignore$", "^\\\\.Rbuildignore$",
+    "\\\\.R$", "\\\\.Rmd$", "\\\\.yml$", "\\\\.yaml$", "\\\\.sh$", "^vignettes[/\\\\]",
+    "^tests[/\\\\]", "^inst[/\\\\]", "^data[/\\\\]", "^\\\\.github[/\\\\]"),
   exclude_patterns = c("\\\\.Rproj$", "/renv/", "/packrat/", "/pkgdown/", "/man/",
     "\\\\.DS_Store", "\\\\.Rhistory", "\\\\.RData")
 )
@@ -21,20 +23,20 @@ collate_from_path(
 \item{path}{The root path to the local repository or R package. Defaults to the
 current working directory.}
 
-\item{output_file}{The path for the output text file. If `NULL` (the default),
+\item{output_file}{The path for the output text file. If NULL (the default),
 a temporary file is created.}
 
-\item{copy_to_clipboard}{Logical. If `TRUE` (the default), the collated text is
+\item{copy_to_clipboard}{Logical. If TRUE (the default), the collated text is
 copied to the system clipboard. Requires the 'clipr' package.}
 
 \item{preamble}{A character string to add to the top of the collated file,
-providing context for an LLM. A default preamble is generated if `NULL`.}
+providing context for an LLM. A default preamble is generated if NULL.}
 
 \item{include_patterns}{A character vector of regex patterns for file paths
 to include. The default is curated for typical R projects.}
 
 \item{exclude_patterns}{A character vector of regex patterns for file paths
-to exclude. Applied *after* the include patterns.}
+to exclude. Applied after the include patterns.}
 }
 \value{
 The collated text as a single character string (invisibly).
@@ -57,6 +59,7 @@ collate_from_path("my_temp_project")
 # Clean up
 unlink("my_temp_project", recursive = TRUE)
 }
+
 }
 \seealso{
 \code{\link{collate_from_github}} for collating from a remote repository.

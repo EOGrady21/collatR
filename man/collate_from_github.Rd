@@ -9,8 +9,8 @@ collate_from_github(repo, branch = NULL, ...)
 \arguments{
 \item{repo}{The GitHub repository in "user/repo" format (e.g., "r-lib/usethis").}
 
-\item{branch}{The name of the branch to clone. Defaults to the repository's
-default branch.}
+\item{branch}{The name of the branch to clone. If `NULL` (the default), the
+repository's default branch is used.}
 
 \item{...}{Arguments to pass on to \code{\link{collate_from_path}}, such as
 `output_file`, `include_patterns`, or `exclude_patterns`.}
@@ -24,8 +24,12 @@ source code into a single text block, and copies it to the clipboard.
 }
 \examples{
 \dontrun{
-# Collate the 'dplyr' package from GitHub and copy to clipboard
+# Collate the 'dplyr' package from its default branch
 collate_from_github("tidyverse/dplyr")
+
+# Collate a specific development branch from a repository
+# (This assumes a branch named 'develop' exists)
+collate_from_github("user/repo", branch = "develop")
 
 # Collate a smaller package and save it to a file
 collate_from_github(
@@ -37,7 +41,4 @@ collate_from_github(
 }
 \seealso{
 \code{\link{collate_from_path}} for collating from a local directory.
-}
-\author{
-Emily O'Grady
 }

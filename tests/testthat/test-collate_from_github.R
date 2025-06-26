@@ -42,3 +42,33 @@ test_that("collate_from_github validates repo name format", {
     regexp = "The `repo` format must be 'user/repo'"
   )
 })
+
+test_that("collate_from_github passes branch argument to gert", {
+  # This variable will live outside the mock to capture the argument
+  captured_branch <- "---NOT SET---"
+
+  # This mock function will capture the 'branch' argument it receives
+  # and then perform the standard dummy project creation.
+  mock_git_clone_spy <- function(url, path, branch = NULL) {
+    # Use '<<-' to assign to the 'captured_branch' in the parent environment
+    captured_branch <<- branch
+    dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    create_dummy_project(path) # Assumes helper is defined elsewhere
+  }
+
+  mockery::stub(
+    where = collate_from_github,
+    what = "gert::git_clone",
+    how = mock_git_clone_spy
+  )
+
+  # --- Test 1: A specific branch is passed correctly ---
+  collate_from_github("user/repo", branch = "develop", copy_to_clipboard = FALSE)
+  expect_equal(captured_branch, "develop")
+
+  # --- Test 2: The default NULL value is passed correctly ---
+  # Reset the capture variable before the next run
+  captured_branch <- "---NOT SET---"
+  collate_from_github("user/repo", copy_to_clipboard = FALSE)
+  expect_null(captured_branch)
+})

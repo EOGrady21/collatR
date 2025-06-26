@@ -1,3 +1,4 @@
+# R/collate_from_github.R
 
 #' Collate Source Code from a GitHub Repository
 #'
@@ -5,8 +6,8 @@
 #' source code into a single text block, and copies it to the clipboard.
 #'
 #' @param repo The GitHub repository in "user/repo" format (e.g., "r-lib/usethis").
-#' @param branch The name of the branch to clone. Defaults to the repository's
-#'   default branch.
+#' @param branch The name of the branch to clone. If `NULL` (the default), the
+#'   repository's default branch is used.
 #' @param ... Arguments to pass on to \code{\link{collate_from_path}}, such as
 #'   `output_file`, `include_patterns`, or `exclude_patterns`.
 #'
@@ -14,13 +15,15 @@
 #' @export
 #' @importFrom cli cli_alert_info cli_alert_success cli_abort
 #' @importFrom gert git_clone
-#'
 #' @seealso \code{\link{collate_from_path}} for collating from a local directory.
-#' @author Emily O'Grady
 #' @examples
 #' \dontrun{
-#' # Collate the 'dplyr' package from GitHub and copy to clipboard
+#' # Collate the 'dplyr' package from its default branch
 #' collate_from_github("tidyverse/dplyr")
+#'
+#' # Collate a specific development branch from a repository
+#' # (This assumes a branch named 'develop' exists)
+#' collate_from_github("user/repo", branch = "develop")
 #'
 #' # Collate a smaller package and save it to a file
 #' collate_from_github(
@@ -30,26 +33,62 @@
 #' )
 #' }
 collate_from_github <- function(repo, branch = NULL, ...) {
-  if (!requireNamespace("gert", quietly = TRUE)) {
-    cli_abort("The 'gert' package is required to clone from GitHub. Please install it with `install.packages('gert')`.")
-  }
-  if (!grepl("/", repo, fixed = TRUE)) {
-    cli_abort("The `repo` format must be 'user/repo' (e.g., 'tidyverse/dplyr').")
+  # --- NEW: Check for command-line git ---
+  git_path <- Sys.which("git")
+  if (git_path == "") {
+    cli_abort(c(
+      "x" = "Command-line 'git' not found.",
+      "!" = "This function requires 'git' to be installed and on the system's PATH.",
+      "i" = "Please install git from https://git-scm.com/downloads"
+    ))
   }
 
-  temp_path <- file.path(tempdir(), basename(repo))
-  on.exit(unlink(temp_path, recursive = TRUE, force = TRUE), add = TRUE)
+  if (!grepl("/", repo, fixed = TRUE)) {
+    cli_abort("The `repo` format must be 'user/repo'...")
+  }
+
+  repo_path <- file.path(tempdir(), basename(repo))
+  # Clean up directory on exit
+  on.exit(unlink(repo_path, recursive = TRUE, force = TRUE), add = TRUE)
 
   repo_url <- paste0("https://github.com/", repo)
 
-  cli_alert_info("Cloning '{repo}' from GitHub...")
-  tryCatch({
-    gert::git_clone(repo_url, path = temp_path, branch = branch)
-    cli_alert_success("Successfully cloned repository.")
-  }, error = function(e) {
-    cli_abort("Failed to clone repository '{repo}'. Please check the name and your internet connection.")
+  # --- Build the git command arguments ---
+  args <- c("clone", "--depth", "1") # --depth 1 for a faster shallow clone
+  if (!is.null(branch)) {
+    args <- c(args, "--branch", branch)
+  }
+  args <- c(args, repo_url, repo_path)
+
+  cli_alert_info("Running git clone...")
+
+  # --- Execute the system command ---
+  result <- tryCatch({
+    system2(git_path, args = args, stdout = TRUE, stderr = TRUE)
+  }, warning = function(w) {
+    # system2 can throw warnings on non-zero exit, which we treat as errors
+    w
   })
 
-  # Call the main function on the temporary path
-  collate_from_path(path = temp_path, ...)
+  # --- Check for cloning errors ---
+  if (inherits(result, "warning") || any(grepl("fatal:", result, ignore.case = TRUE))) {
+    output_text <- paste(result, collapse = "\n")
+    if (grepl("repository not found", output_text, ignore.case = TRUE)) {
+      cli_abort("Failed to clone: Repository not found (it may be private or misspelled).")
+    } else if (grepl("could not find remote branch", output_text, ignore.case = TRUE)) {
+      cli_abort("Failed to clone: The branch '{branch}' does not exist.")
+    } else {
+      cli_abort(c("Git clone failed. Raw output:", paste(" ", result)))
+    }
+  }
+
+  cli_alert_success("Successfully cloned repository.")
+
+  # Now, call the function that uses gert::git_ls, which will work correctly.
+  collate_from_path(path = repo_path, ...)
+}
+
+# Helper for a nicer cli message
+`%||%` <- function(a, b) {
+  if (is.null(a)) b else a
 }
