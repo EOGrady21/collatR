@@ -4,7 +4,7 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# collator 📦
+# collatR 📦
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/eogrady21/collatR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/eogrady21/collatR/actions/workflows/R-CMD-check.yaml)
@@ -49,10 +49,7 @@ collate_from_path()
 To analyze a public package on GitHub, use `collate_from_github()`. The package will clone the repo to a temporary location, collate it, and copy the result to your clipboard.
 
 ```r
-# Get the entire source for {dplyr} ready for an LLM
-collate_from_github("tidyverse/dplyr")
-
-# Or get the source for this package itself!
+# Get the source for this package itself!
 collate_from_github("eogrady21/collatR")
 ```
 

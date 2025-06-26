@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# collator 📦
+# collatR 📦
 
 <!-- badges: start -->
 
@@ -58,10 +58,7 @@ package will clone the repo to a temporary location, collate it, and
 copy the result to your clipboard.
 
 ``` r
-# Get the entire source for {dplyr} ready for an LLM
-collate_from_github("tidyverse/dplyr")
-
-# Or get the source for this package itself!
+# Get the source for this package itself!
 collate_from_github("eogrady21/collatR")
 ```
 
