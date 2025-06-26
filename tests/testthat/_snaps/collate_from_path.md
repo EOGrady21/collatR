@@ -3,7 +3,7 @@
     Code
       result <- collate_from_path(".", copy_to_clipboard = FALSE)
     Message
-      ! No files found matching the criteria in '.'.
+      i No files in local path '.' matched the specified patterns.
     Code
       expect_equal(result, "")
 

@@ -1,74 +1,58 @@
 # tests/testthat/test-collate_from_github.R
 
-# This helper function is defined in the other test file, which is fine
-# as testthat loads all helpers and test files.
+test_that("collate_from_github successfully clones a new repo", {
+  # Mock system2 to simulate a successful git clone (returns nothing on success)
+  mock_clone <- mockery::mock(NULL)
+  # Mock collate_from_path to prevent it from actually running
+  mockery::stub(collate_from_github, "collate_from_path", \(...) "ok")
 
-test_that("collate_from_github successfully calls path function after mock clone", {
-  mock_git_clone <- function(url, path, branch = NULL) {
-    dir.create(path, showWarnings = FALSE, recursive = TRUE)
-    create_dummy_project(path) # Assumes this helper is defined elsewhere
-  }
+  withr::with_tempdir({
+    # Point the cache to a temporary directory for this test
+    mockery::stub(collate_from_github, "rappdirs::user_cache_dir", \(...) ".")
+    mockery::stub(collate_from_github, "system2", mock_clone)
 
-  mockery::stub(
-    where = collate_from_github,
-    what = "gert::git_clone",
-    how = mock_git_clone
-  )
+    expect_message(
+      result <- collate_from_github("eogrady21/eogrady21"),
+      "Cloning 'eogrady21/eogrady21' into cache..."
+    )
+    expect_equal(result, "ok")
 
-  result <- collate_from_github("user/repo", copy_to_clipboard = FALSE)
-
-  expect_true(grepl("--- START OF FILE: DESCRIPTION ---", result, fixed = TRUE))
-  expect_true(grepl("Package: mytestpkg", result, fixed = TRUE))
+    # Check that our system2 mock was called once for the clone
+    mockery::expect_called(mock_clone, 1)
+  })
 })
 
-test_that("collate_from_github errors gracefully on clone failure", {
-  # Define a mock that *always* fails
-  mock_git_clone_fail <- function(url, path, branch = NULL) {
-    stop("Simulated git clone failure")
-  }
+test_that("collate_from_github uses cache and pulls updates", {
+  # Mock system2 for a successful git pull
+  mock_pull <- mockery::mock(NULL)
+  mockery::stub(collate_from_github, "collate_from_path", \(...) "ok")
 
-  mockery::stub(collate_from_github, "gert::git_clone", mock_git_clone_fail)
+  withr::with_tempdir({
+    mockery::stub(collate_from_github, "rappdirs::user_cache_dir", \(...) ".")
+    mockery::stub(collate_from_github, "system2", mock_pull)
 
-  # Check that our function catches the error and provides a user-friendly message
-  expect_error(
-    collate_from_github("user/repo"),
-    regexp = "Failed to clone repository"
-  )
+    # Create a dummy repo directory to trigger the "pull" logic
+    dir.create("user/repo", recursive = TRUE)
+
+    expect_message(
+      result <- collate_from_github("user/repo"),
+      "Pulling latest changes"
+    )
+    expect_equal(result, "ok")
+    mockery::expect_called(mock_pull, 1)
+  })
 })
 
-test_that("collate_from_github validates repo name format", {
-  expect_error(
-    collate_from_github("invalid-repo-name"),
-    regexp = "The `repo` format must be 'user/repo'"
-  )
-})
+test_that("collate_from_github handles clone failure", {
+  # Mock system2 to simulate a failure by returning a warning object
+  mockery::stub(collate_from_github, "system2", \(...) warning("fatal: repo not found"))
 
-test_that("collate_from_github passes branch argument to gert", {
-  # This variable will live outside the mock to capture the argument
-  captured_branch <- "---NOT SET---"
+  withr::with_tempdir({
+    mockery::stub(collate_from_github, "rappdirs::user_cache_dir", \(...) ".")
 
-  # This mock function will capture the 'branch' argument it receives
-  # and then perform the standard dummy project creation.
-  mock_git_clone_spy <- function(url, path, branch = NULL) {
-    # Use '<<-' to assign to the 'captured_branch' in the parent environment
-    captured_branch <<- branch
-    dir.create(path, showWarnings = FALSE, recursive = TRUE)
-    create_dummy_project(path) # Assumes helper is defined elsewhere
-  }
-
-  mockery::stub(
-    where = collate_from_github,
-    what = "gert::git_clone",
-    how = mock_git_clone_spy
-  )
-
-  # --- Test 1: A specific branch is passed correctly ---
-  collate_from_github("user/repo", branch = "develop", copy_to_clipboard = FALSE)
-  expect_equal(captured_branch, "develop")
-
-  # --- Test 2: The default NULL value is passed correctly ---
-  # Reset the capture variable before the next run
-  captured_branch <- "---NOT SET---"
-  collate_from_github("user/repo", copy_to_clipboard = FALSE)
-  expect_null(captured_branch)
+    expect_error(
+      collate_from_github("user/repo"),
+      "Git clone failed."
+    )
+  })
 })
