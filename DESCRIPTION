@@ -1,0 +1,22 @@
+Package: collatR
+Title: Collate Source Code for LLM Analysis
+Version: 0.1.0
+Author: Emily O'Grady
+Maintainer: Emily O'Grady <emilyogrady21@gmail.com>
+Description: A tool to scan a local or remote code repository (especially R packages), 
+    find all relevant source files, and combine them into a single, well-structured 
+    text file. This is ideal for pasting the entire context of a project into a Large 
+    Language Model (LLM) for debugging, analysis, or refactoring.
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.3.2
+Imports: 
+    cli,
+    clipr,
+    gert
+Suggests:
+    mockery,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+URL: https://github.com/YOUR_USERNAME/collator
+BugReports: https://github.com/YOUR_USERNAME/collator/issues
