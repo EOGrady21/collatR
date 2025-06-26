@@ -18,31 +18,29 @@ collate_from_path(
 )
 }
 \arguments{
-\item{path}{The root path to the local repository or R package. Defaults to the
-current working directory.}
+\item{path}{Character. Root path to the local repository or R package. Defaults to
+the current working directory.}
 
-\item{output_file}{The path for the output text file. If `NULL` (the default),
+\item{output_file}{Character or NULL. Path for the output text file. If `NULL`,
 no file is written.}
 
-\item{copy_to_clipboard}{Logical. If `TRUE` (the default), the collated text is
+\item{copy_to_clipboard}{Logical. If `TRUE` (default), the collated text is
 copied to the system clipboard. Requires the 'clipr' package.}
 
-\item{preamble}{A character string to add to the top of the collated file,
-providing context for an LLM. A default preamble is generated if `NULL`.}
+\item{preamble}{Character or NULL. Text to add to the top of the collated file.
+A default preamble is generated if `NULL`.}
 
-\item{include_patterns}{A character vector of regex patterns for file paths
-to include.}
+\item{include_patterns}{Character vector. Regex patterns for file paths to include.}
 
-\item{exclude_patterns}{A character vector of regex patterns for file paths
-to exclude.}
+\item{exclude_patterns}{Character vector. Regex patterns for file paths to exclude.}
 }
 \value{
 The collated text as a single character string (invisibly).
 }
 \description{
 Scans a local directory, finds relevant source files based on include/exclude
-patterns, and combines them into a single text file. The output is
-automatically copied to the clipboard for convenience.
+patterns, and combines them into a single text file. Optionally copies the result
+to the clipboard.
 }
 \seealso{
 \code{\link{collate_from_github}} for collating from a remote repository.

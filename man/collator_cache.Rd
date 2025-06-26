@@ -14,6 +14,11 @@ get_collator_cache_dir()
 \item{force}{Logical. If `FALSE` (the default), an interactive prompt will ask
 for confirmation before deleting files.}
 }
+\value{
+Invisibly returns `NULL`. Used for side effects.
+
+A character string with the path to the cache directory.
+}
 \description{
 Helper functions to interact with the directory used by `collator` to cache
 cloned GitHub repositories.

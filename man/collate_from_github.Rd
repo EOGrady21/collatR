@@ -7,36 +7,25 @@
 collate_from_github(repo, branch = NULL, ...)
 }
 \arguments{
-\item{repo}{The GitHub repository in "user/repo" format (e.g., "r-lib/usethis").}
+\item{repo}{Character. The GitHub repository in "user/repo" format (e.g., "r-lib/usethis").}
 
-\item{branch}{The name of the branch to clone. If `NULL` (the default), the
-repository's default branch is used.}
+\item{branch}{Character or NULL. The branch to clone. If `NULL`, uses the default branch.}
 
-\item{...}{Arguments to pass on to \code{\link{collate_from_path}}, such as
+\item{...}{Arguments passed to \code{\link{collate_from_path}}, such as
 `output_file`, `include_patterns`, or `exclude_patterns`.}
 }
 \value{
 The collated text as a single character string (invisibly).
 }
 \description{
-Clones a public GitHub repository to a temporary directory, collates its
-source code into a single text block, and copies it to the clipboard.
+Clones a public GitHub repository to a persistent cache directory, collates its
+source code into a single text block, and optionally copies it to the clipboard.
 }
 \examples{
 \dontrun{
-# Collate the 'dplyr' package from its default branch
 collate_from_github("tidyverse/dplyr")
-
-# Collate a specific development branch from a repository
-# (This assumes a branch named 'develop' exists)
 collate_from_github("user/repo", branch = "develop")
-
-# Collate a smaller package and save it to a file
-collate_from_github(
-  "r-lib/crayon",
-  output_file = "crayon_source.txt",
-  copy_to_clipboard = FALSE
-)
+collate_from_github("r-lib/crayon", output_file = "crayon_source.txt", copy_to_clipboard = FALSE)
 }
 }
 \seealso{
